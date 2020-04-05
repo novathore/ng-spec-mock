@@ -1,10 +1,10 @@
+import { size } from 'lodash';
 
 import traverse from '@babel/traverse';
-
 import { parse } from '@babel/parser';
-import { isImportDeclaration } from '@babel/types';
+import { isClassDeclaration, isImportDeclaration } from '@babel/types';
 import { getImports, ImportMap } from './traverse-methods/import-declaration';
-import { getDependencyInjection } from "./traverse-methods/class-declaration";
+import { getDependencyInjection, DependencyInjectionMap } from './traverse-methods/class-declaration';
 
 export function sourceParse(fileContent: string) {
 
@@ -14,25 +14,32 @@ export function sourceParse(fileContent: string) {
     plugins: ['typescript', 'decorators-legacy', 'classProperties', 'objectRestSpread', 'optionalCatchBinding']
   });
 
-  const imports: Array<ImportMap> = [] as Array<ImportMap>;
-
+  let imports: Array<ImportMap> = [] as Array<ImportMap>;
+  let dependencies: Array<DependencyInjectionMap> = [] as Array<DependencyInjectionMap>;
   traverse(ast, {
     ImportDeclaration(path) {
       const Node = path.node;
       if (isImportDeclaration(Node)) {
-        const importMap = getImports(Node);
-        imports.push(importMap);
+        const resolvedImports = getImports(Node);
+        if (resolvedImports) {
+          imports.push(resolvedImports);
+        }
       }
     },
 
-    // TODO make issue to babel types or pull request for ClassDeclaration, it doesn't have types;
     ClassDeclaration(path) {
       const Node = path.node;
-      // @ts-ignore
-      const dependencyInjection = getDependencyInjection(Node);
-      console.log(dependencyInjection);
+      if (isClassDeclaration(Node)) {
+        const dependencyInjections = getDependencyInjection(Node);
+        if (dependencyInjections && size(dependencyInjections)) {
+          dependencies = dependencyInjections;
+        }
+      }
     }
   });
 
-  return imports;
+  return {
+    imports,
+    dependencies
+  };
 }

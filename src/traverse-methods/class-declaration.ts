@@ -1,13 +1,12 @@
 import {
-    ClassExpression,
     isTSTypeAnnotation,
     isTSTypeReference,
     isTSParameterProperty,
     isIdentifier,
     isClassMethod,
-    isClassBody
+    isClassBody, ClassDeclaration
 } from '@babel/types';
-import { find, filter } from 'lodash';
+import { find, map } from 'lodash';
 
 export interface DependencyInjectionMap {
     classDeclaration: string;
@@ -15,13 +14,13 @@ export interface DependencyInjectionMap {
 }
 
 // TODO check that classDeclaration wrapped into angular injector decorator;
-export function getDependencyInjection(Node: ClassExpression): Array<DependencyInjectionMap> | false | Array<any> {
+export function getDependencyInjection(Node: ClassDeclaration): Array<DependencyInjectionMap> | false | Array<any> {
     const constructorBody = isClassBody(Node?.body) && find(Node.body.body, node => {
         return isClassMethod(node) && node.kind === 'constructor';
     });
 
     if (constructorBody && isClassMethod(constructorBody)) {
-        return filter(constructorBody.params, param => {
+        return map(constructorBody.params, param => {
             if (
                 isTSParameterProperty(param) &&
                 isTSTypeAnnotation(param?.parameter?.typeAnnotation) &&

@@ -25,6 +25,5 @@ const absolutePathToSourceFile = './stubs/some.pipe.ts';
 
 (async function() {
   const fileContent = await readFile(absolutePathToSourceFile, 'utf8');
-  const pp = sourceParse(fileContent);
-  console.log(pp);
+  console.log(sourceParse(fileContent));
 })();
